@@ -36,6 +36,11 @@ login_manager.login_view = 'login'
 def initialize_database():
     if not hasattr(app, '_db_initialized'):
         db.create_all()
+        try:
+            from seed import seed_data
+            seed_data()
+        except Exception as e:
+            print(f"Error seeding database: {e}")
         app._db_initialized = True
 
 @login_manager.user_loader

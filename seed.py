@@ -1,17 +1,20 @@
-from app import app, db, bcrypt
+from app import app, db
 from models import User, Product
+from werkzeug.security import generate_password_hash
 
 def seed_data():
     with app.app_context():
-        db.drop_all()
-        db.create_all()
+        # Check if database already has products to prevent double-seeding
+        if Product.query.first():
+            print("Database already seeded.")
+            return
 
         # Create Admin
-        hashed_pw = bcrypt.generate_password_hash('admin123').decode('utf-8')
+        hashed_pw = generate_password_hash('admin123')
         admin = User(username='admin', email='admin@ecommerce.com', password=hashed_pw, role='admin')
         
         # Create User
-        hashed_pw2 = bcrypt.generate_password_hash('user123').decode('utf-8')
+        hashed_pw2 = generate_password_hash('user123')
         user = User(username='testuser', email='user@ecommerce.com', password=hashed_pw2, role='user')
 
         db.session.add(admin)
