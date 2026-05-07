@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}{{ product.name }} - Aura Commerce{% endblock %}
+
+{% block content %}
+<div class="detail-container">
+    <div class="detail-image-wrapper">
+        <img src="{{ product.image_url }}" alt="{{ product.name }}" class="detail-image">
+    </div>
+    <div class="detail-info">
+        <div class="product-category" style="position: static; display: inline-block; margin-bottom: 1rem;">{{ product.category }}</div>
+        <h1>{{ product.name }}</h1>
+        <div class="detail-price">₹{{ "%.2f"|format(product.price) }}</div>
+        <p class="detail-desc">{{ product.description }}</p>
+        
+        <div style="margin-bottom: 2rem; color: var(--text-secondary);">
+            Availability: 
+            {% if product.stock > 0 %}
+                <span style="color: #22c55e;">In Stock ({{ product.stock }})</span>
+            {% else %}
+                <span style="color: #ef4444;">Out of Stock</span>
+            {% endif %}
+        </div>
+        
+        <button class="btn btn-primary add-to-cart-btn" style="padding: 1rem 2rem; font-size: 1.1rem; width: auto;"
+            data-id="{{ product.id }}" 
+            data-name="{{ product.name }}" 
+            data-price="{{ product.price }}" 
+            data-image="{{ product.image_url }}"
+            {% if product.stock <= 0 %}disabled{% endif %}>
+            {% if product.stock > 0 %}
+                <i class="fas fa-shopping-cart"></i> Add to Cart
+            {% else %}
+                Out of Stock
+            {% endif %}
+        </button>
+    </div>
+</div>
+{% endblock %}

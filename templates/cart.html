@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}Cart - Aura Commerce{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto; text-align: center; padding: 4rem;">
+    <h2 style="margin-bottom: 2rem;">Shopping Cart</h2>
+    <p>Your cart is managed in the sidebar overlay. Click the shopping bag icon in the navigation to view and checkout your items.</p>
+    <br>
+    <a href="{{ url_for('index') }}" class="btn btn-primary">Continue Shopping</a>
+</div>
+{% endblock %}

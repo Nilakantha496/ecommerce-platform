@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}My Orders - Aura Commerce{% endblock %}
+
+{% block content %}
+<div>
+    <h2 style="margin-bottom: 2rem;">My Orders</h2>
+    
+    {% if orders %}
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Date</th>
+                        <th>Items</th>
+                        <th>Total Amount</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                    <tr>
+                        <td>#{{ order.id }}</td>
+                        <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td>
+                            <ul style="list-style: none; padding: 0; margin: 0;">
+                            {% for item in order.items %}
+                                <li style="margin-bottom: 0.3rem;">
+                                    {{ item.quantity }}x {{ item.product.name }}
+                                </li>
+                            {% endfor %}
+                            </ul>
+                        </td>
+                        <td style="font-weight: 600; color: var(--accent-color);">₹{{ "%.2f"|format(order.total_amount) }}</td>
+                        <td>
+                            <span class="status-badge status-{{ order.status|lower }}">{{ order.status }}</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div style="text-align: center; padding: 4rem; background: var(--card-bg); border-radius: 16px; border: 1px solid var(--border-color);">
+            <i class="fas fa-box-open" style="font-size: 4rem; color: var(--text-secondary); margin-bottom: 1rem;"></i>
+            <h3>No Orders Yet</h3>
+            <p style="color: var(--text-secondary); margin-top: 0.5rem; margin-bottom: 2rem;">Looks like you haven't made any purchases yet.</p>
+            <a href="{{ url_for('index') }}" class="btn btn-primary">Start Shopping</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

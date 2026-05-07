@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Checkout - Aura Commerce{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 0 auto;">
+    <h2 style="margin-bottom: 2rem;">Checkout</h2>
+    
+    <div style="background: var(--card-bg); border: 1px solid var(--border-color); padding: 2rem; border-radius: 16px;">
+        <h3 style="margin-bottom: 1.5rem;">Order Summary</h3>
+        <div id="checkoutItems" style="margin-bottom: 2rem;">
+            <!-- Rendered via JS -->
+            <p style="color: var(--text-secondary);">Loading your items...</p>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; font-size: 1.5rem; font-weight: 700; margin-bottom: 2rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+            <span>Total to Pay:</span>
+            <span id="checkoutTotal" style="color: var(--accent-color);">₹0.00</span>
+        </div>
+        
+        <button id="confirmOrderBtn" class="btn btn-primary" style="width: 100%; font-size: 1.2rem; padding: 1rem;">Confirm & Pay</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const checkoutItemsContainer = document.getElementById('checkoutItems');
+        const checkoutTotalElement = document.getElementById('checkoutTotal');
+        const confirmOrderBtn = document.getElementById('confirmOrderBtn');
+        
+        let currentCart = JSON.parse(localStorage.getItem('ecommerce_cart')) || [];
+        
+        if (currentCart.length === 0) {
+            checkoutItemsContainer.innerHTML = '<p>Your cart is empty.</p>';
+            confirmOrderBtn.disabled = true;
+            return;
+        }
+        
+        let total = 0;
+        checkoutItemsContainer.innerHTML = currentCart.map(item => {
+            total += item.price * item.quantity;
+            return `
+                <div style="display: flex; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
+                    <div style="display: flex; gap: 1rem; align-items: center;">
+                        <img src="${item.image}" alt="${item.name}" style="width: 50px; height: 50px; border-radius: 8px; object-fit: cover;">
+                        <div>
+                            <div style="font-weight: 500;">${item.name}</div>
+                            <div style="color: var(--text-secondary); font-size: 0.9rem;">Qty: ${item.quantity}</div>
+                        </div>
+                    </div>
+                    <div style="font-weight: 600;">₹${(item.price * item.quantity).toFixed(2)}</div>
+                </div>
+            `;
+        }).join('');
+        
+        checkoutTotalElement.textContent = `₹${total.toFixed(2)}`;
+        
+        confirmOrderBtn.addEventListener('click', async () => {
+            try {
+                confirmOrderBtn.innerHTML = '<div class="spinner"></div> Processing...';
+                confirmOrderBtn.disabled = true;
+
+                const response = await fetch('/api/create-checkout-session', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ cart: currentCart })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    localStorage.removeItem('ecommerce_cart');
+                    window.location.href = data.url;
+                } else {
+                    showToast(data.error || 'An error occurred during checkout.', 'error');
+                    confirmOrderBtn.textContent = 'Confirm & Pay';
+                    confirmOrderBtn.disabled = false;
+                }
+            } catch (error) {
+                console.error('Checkout error:', error);
+                showToast('Failed to connect to the server.', 'error');
+                confirmOrderBtn.textContent = 'Confirm & Pay';
+                confirmOrderBtn.disabled = false;
+            }
+        });
+    });
+</script>
+{% endblock %}

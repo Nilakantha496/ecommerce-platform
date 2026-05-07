@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Aura Commerce{% endblock %}
+
+{% block content %}
+<div>
+    <h2 style="margin-bottom: 2rem;">Admin Dashboard</h2>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+        <div style="background: var(--card-bg); border: 1px solid var(--border-color); padding: 2rem; border-radius: 16px;">
+            <h3>Total Sales</h3>
+            <div style="font-size: 2.5rem; font-weight: 700; color: var(--accent-color);">
+                ₹{{ "%.2f"|format(orders|sum(attribute='total_amount')) }}
+            </div>
+        </div>
+        <div style="background: var(--card-bg); border: 1px solid var(--border-color); padding: 2rem; border-radius: 16px;">
+            <h3>Total Orders</h3>
+            <div style="font-size: 2.5rem; font-weight: 700; color: #3b82f6;">{{ orders|length }}</div>
+        </div>
+        <div style="background: var(--card-bg); border: 1px solid var(--border-color); padding: 2rem; border-radius: 16px;">
+            <h3>Total Products</h3>
+            <div style="font-size: 2.5rem; font-weight: 700; color: #22c55e;">{{ products|length }}</div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div style="margin-bottom: 3rem; background: var(--card-bg); border: 1px solid var(--border-color); padding: 2rem; border-radius: 16px;">
+        <h3>Add New Product</h3>
+        <form method="POST" action="{{ url_for('add_product') }}" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
+            <input type="text" name="name" class="form-control" placeholder="Product Name" required>
+            <input type="number" name="price" step="0.01" class="form-control" placeholder="Price (₹)" required>
+            <input type="text" name="category" class="form-control" placeholder="Category (e.g. Mobiles)" required>
+            <input type="number" name="stock" class="form-control" placeholder="Stock Quantity" required>
+            <input type="text" name="image_url" class="form-control" placeholder="Image URL" style="grid-column: span 2;">
+            <textarea name="description" class="form-control" placeholder="Description" style="grid-column: span 2;" required></textarea>
+            <button type="submit" class="btn btn-primary" style="grid-column: span 2;">Add Product</button>
+        </form>
+    </div>
+
+    <h3 style="margin-bottom: 1rem;">Recent Orders</h3>
+    {% if orders %}
+        <div class="table-container" style="margin-bottom: 3rem;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>User</th>
+                        <th>Date</th>
+                        <th>Total Amount</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders[:10] %}
+                    <tr>
+                        <td>#{{ order.id }}</td>
+                        <td>{{ order.user.username }}<br><small style="color:var(--text-secondary)">{{ order.user.email }}</small></td>
+                        <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td style="font-weight: 600;">₹{{ "%.2f"|format(order.total_amount) }}</td>
+                        <td>
+                            <span class="status-badge status-{{ order.status|lower }}">{{ order.status }}</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p>No orders found in the system.</p>
+    {% endif %}
+    
+    <h3 style="margin-top: 3rem; margin-bottom: 1rem;">Inventory & Stock Levels</h3>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Price</th>
+                    <th>Stock</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in products %}
+                <tr>
+                    <td>{{ product.id }}</td>
+                    <td>{{ product.name }}</td>
+                    <td><span class="status-badge" style="background: rgba(255,255,255,0.1); color: #fff;">{{ product.category }}</span></td>
+                    <td>₹{{ "%.2f"|format(product.price) }}</td>
+                    <td>
+                        <span style="font-weight: 600; color: {% if product.stock > 10 %}#22c55e{% else %}#ef4444{% endif %};">
+                            {{ product.stock }}
+                        </span>
+                        {% if product.stock <= 10 %}
+                            <i class="fas fa-exclamation-triangle" style="color: #ef4444; margin-left: 0.5rem;" title="Low Stock"></i>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
