@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
-from flask_bcrypt import Bcrypt
+from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from models import db, User, Product, Order, OrderItem
 import stripe
@@ -14,17 +14,29 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'super-secret-ecommerce-key-123')
 
 # Check for Vercel Postgres / Supabase URL
-database_url = os.environ.get('POSTGRES_URL') or os.environ.get('DATABASE_URL') or 'sqlite:///ecommerce.db'
-if database_url.startswith("postgres://"):
-    database_url = database_url.replace("postgres://", "postgresql://", 1)
+database_url = os.environ.get('POSTGRES_URL') or os.environ.get('DATABASE_URL')
+if not database_url:
+    if os.environ.get('VERCEL') == '1':
+        database_url = 'sqlite:////tmp/ecommerce.db'
+    else:
+        database_url = 'sqlite:///ecommerce.db'
+
+if database_url.startswith("postgres://") or database_url.startswith("postgresql://"):
+    database_url = database_url.replace("postgres://", "postgresql+pg8000://", 1)
+    database_url = database_url.replace("postgresql://", "postgresql+pg8000://", 1)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
-bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
+
+@app.before_request
+def initialize_database():
+    if not hasattr(app, '_db_initialized'):
+        db.create_all()
+        app._db_initialized = True
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -110,7 +122,7 @@ def login():
         email = request.form.get('email')
         password = request.form.get('password')
         user = User.query.filter_by(email=email).first()
-        if user and bcrypt.check_password_hash(user.password, password):
+        if user and check_password_hash(user.password, password):
             login_user(user)
             next_page = request.args.get('next')
             return redirect(next_page) if next_page else redirect(url_for('index'))
@@ -131,7 +143,7 @@ def register():
             flash('Email already exists. Please login.', 'danger')
             return redirect(url_for('register'))
             
-        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+        hashed_password = generate_password_hash(password)
         user = User(username=username, email=email, password=hashed_password)
         db.session.add(user)
         db.session.commit()
